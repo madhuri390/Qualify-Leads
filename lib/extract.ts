@@ -3,7 +3,10 @@ import { z } from "zod";
 import { requireEnv } from "./env";
 import { EMPTY_EXTRACTION, ExtractedLeadSchema, type ExtractedLead } from "./types";
 
-export const MODEL = "gemini-2.5-flash";
+// Gemini deprecates model IDs aggressively — 2.5 Flash stopped accepting new
+// users well before its official shutdown date. Check
+// https://ai.google.dev/gemini-api/docs/models before changing this again.
+export const MODEL = "gemini-3.6-flash";
 
 /**
  * One Zod schema drives both the model contract and the validation of what

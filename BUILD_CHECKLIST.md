@@ -14,15 +14,18 @@ Working tracker for the Day 1 build. Tick as we go.
 - [x] 🤖 Create `.env.local.example` with every key documented
 - [x] 🤖 Merge `.gitignore` (`.env*` ignored, `.env.local.example` excepted)
 - [x] 🤖 Pin `turbopack.root` — Next was inferring the home directory
-- [ ] 👤 Get a Gemini API key → https://aistudio.google.com/apikey
-- [ ] 👤 Create the Google Sheet, note its ID from the URL
-- [ ] 👤 Google Cloud: create a service account, enable the Sheets API,
+- [x] 👤 Get a Gemini API key → https://aistudio.google.com/apikey
+- [x] 👤 Create the Google Sheet, note its ID from the URL. Tab renamed
+      to `Leads` to match `GOOGLE_SHEET_TAB`
+- [x] 👤 Google Cloud: create a service account, enable the Sheets API,
       download the JSON key
-- [ ] 👤 Share the Sheet with the service-account email as **Editor**
-      (skipping this gives a confusing 403)
-- [ ] 👤 Copy `.env.local.example` → `.env.local`, fill in all values
-- [x] 🤖 `scripts/init-sheet.ts` — writes the header row, proves auth works
-- [ ] 👤 Run `npm run sheet:init`
+- [x] 👤 Share the Sheet with the service-account email as **Editor**
+- [x] 👤 Copy `.env.local.example` → `.env.local`, fill in all values
+- [x] 🤖 `scripts/init-sheet.ts` — writes the header row, proves auth works.
+      Needed `scripts/load-env.ts` first — a bare `tsx` run doesn't load
+      `.env.local` the way Next's dev server does; shared by every script now
+- [x] 👤 Run `npm run sheet:init` — 20-column header row confirmed live
+- [ ] 👤 Add conditional formatting on Status column (green/amber/red)
 
 ## Phase 1 — WhatsApp inbound
 
@@ -30,10 +33,22 @@ Working tracker for the Day 1 build. Tick as we go.
 - [x] 🤖 `POST /api/webhook/whatsapp` — 200 immediately, work in `after()`
 - [x] 🤖 Verify `X-Hub-Signature-256` (timing-safe, required in production)
 - [x] 🤖 Dedupe on `wamid` via the Sheet's Message ID column
-- [ ] 👤 Deploy to Vercel (needed for a stable HTTPS webhook URL)
-- [ ] 👤 Add all env vars in Vercel → Settings → Environment Variables
+- [x] 👤 Deploy to Vercel. Two issues hit and fixed along the way:
+      (1) a stale cached GitHub credential for a different account was
+      shadowing the real one, blocking every push — cleared from Keychain
+      and `~/.git-credentials`; (2) a live Google service-account key had
+      been committed in the first commit — deleted, commit amended before
+      it ever reached GitHub (push protection caught it pre-push)
+- [x] 👤 Deployment Protection SSO wall was blocking every request,
+      including Meta's — disabled in Settings → Deployment Protection
+- [x] 👤 Add all env vars in Vercel → Settings → Environment Variables —
+      confirmed live via a signed GET against the deployed URL
 - [ ] 👤 Register the webhook URL + verify token in the Meta dashboard,
-      subscribe to the `messages` field
+      subscribe to the `messages` field — **using the deployment's hash URL
+      for now** (`qualify-leads-od2qgrqkd-madhuri-veeramreddy.vercel.app`),
+      not the stable production domain. Re-register with the stable domain
+      before this becomes a habit — every new deploy mints a new hash URL
+      and silently breaks the webhook until re-registered.
 - [ ] 👤 Add your own number + the sales number to the test-number allowlist
       (max ~5 recipients — do this now, not on demo day)
 - [ ] ✅ **Checkpoint:** send a WhatsApp message, see it logged in Vercel

@@ -10,20 +10,7 @@
  * gets tested too rather than only the dev-mode bypass.
  */
 import crypto from "node:crypto";
-import { readFileSync } from "node:fs";
-
-// Load .env.local without adding a dependency — Next does this itself at
-// runtime, but this script runs outside Next.
-try {
-  for (const line of readFileSync(".env.local", "utf8").split("\n")) {
-    const match = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)$/);
-    if (!match) continue;
-    const value = match[2].trim().replace(/^["']|["']$/g, "");
-    process.env[match[1]] ??= value;
-  }
-} catch {
-  console.warn("No .env.local found — continuing without it");
-}
+import "./load-env";
 
 const URL_ = process.env.WEBHOOK_URL ?? "http://localhost:3000/api/webhook/whatsapp";
 

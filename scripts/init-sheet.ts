@@ -7,6 +7,7 @@
  * Its real job is proving the Google auth chain works before we depend on it
  * from a webhook, where failures are much harder to read.
  */
+import "./load-env";
 import { COLUMNS, writeHeaderRow } from "../lib/sheets";
 
 async function main() {
