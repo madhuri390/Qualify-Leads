@@ -110,6 +110,15 @@ export async function hasSeenMessage(messageId: string): Promise<boolean> {
   return (data.values ?? []).some((row) => row[0] === messageId);
 }
 
+/**
+ * Wipes every data row, leaving the header. A maintenance operation for
+ * resetting between demo takes — the pipeline never calls it, and nothing here
+ * loosens the append-only rule the agent itself follows.
+ */
+export async function clearDataRows(): Promise<void> {
+  await sheetsFetch(`/values/${range("A2:T")}:clear`, { method: "POST" });
+}
+
 export interface LeadRow {
   lead: Lead;
   extracted: ExtractedLead;

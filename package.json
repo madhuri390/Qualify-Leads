@@ -12,6 +12,7 @@
     "eval": "tsx scripts/eval.ts",
     "sheet:init": "tsx scripts/init-sheet.ts",
     "sheet:read": "tsx scripts/read-sheet.ts",
+    "sheet:clear": "tsx scripts/clear-sheet.ts",
     "webhook:test": "tsx scripts/send-test-webhook.ts"
   },
   "dependencies": {

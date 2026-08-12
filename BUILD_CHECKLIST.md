@@ -68,15 +68,32 @@ same deployments — but standardize on `-phi` to avoid the two-URLs confusion.)
       WhatsApp alert delivered
 - [x] 👤 Add all env vars in Vercel → Settings → Environment Variables —
       confirmed live via a signed GET against the deployed URL
-- [ ] 👤 Register the webhook URL + verify token in the Meta dashboard,
-      subscribe to the `messages` field — **using the deployment's hash URL
-      for now** (`qualify-leads-od2qgrqkd-madhuri-veeramreddy.vercel.app`),
-      not the stable production domain. Re-register with the stable domain
-      before this becomes a habit — every new deploy mints a new hash URL
-      and silently breaks the webhook until re-registered.
-- [ ] 👤 Add your own number + the sales number to the test-number allowlist
+- [x] 👤 Register the webhook URL + verify token in the Meta dashboard,
+      subscribe to the `messages` field — now on the stable domain
+      `https://qualify-leads-phi.vercel.app/api/webhook/whatsapp`
+- [x] 👤 Add your own number + the sales number to the test-number allowlist
       (max ~5 recipients — do this now, not on demo day)
-- [ ] ✅ **Checkpoint:** send a WhatsApp message, see it logged in Vercel
+- [x] 🔑 **The bug that ate a day: WhatsApp has _two_ subscription layers.**
+      Real messages reached Meta (double ticks) and vanished; the dashboard
+      showed everything correctly configured; Meta's own **Test** button
+      delivered fine. The Test fires from the app side and bypasses account
+      routing, which is exactly what made it misleading.
+      - **App level** — App Dashboard → Webhooks: callback URL + `messages`
+        field. This was correct the whole time.
+      - **Account level** — `GET /{waba-id}/subscribed_apps`. Not surfaced in
+        that dashboard page at all. Ours listed only Meta's internal
+        `WA DevX Webhook Events 1P App`; our app was absent, so nothing was
+        ever forwarded.
+      - **Fix:** `POST /1574542650732613/subscribed_apps` with the system-user
+        token. One call, instant.
+      - WABA ID `1574542650732613` is **not** derivable from the phone number
+        ID via the Graph API — read it off WhatsApp → API Setup. Worth noting
+        the stale-hash-URL chases above were never the cause.
+- [x] 🤖 `[webhook] inbound` log line before the signature check — Vercel's
+      runtime logs only surface invocations that print something, so a
+      delivery that 401s or carries no messages is otherwise invisible.
+      Logs `entry[].id`, which is the WABA ID
+- [x] ✅ **Checkpoint:** real WhatsApp message → row in the Sheet
 
 ## Phase 2 — Normalize + extract
 
@@ -86,7 +103,10 @@ same deployments — but standardize on `-phi` to avoid the two-URLs confusion.)
       schema, then parsed back through it
 - [x] 🤖 Prompt hardened against injection; Hinglish/Telugu handling
 - [x] 🤖 Unparseable output → `Needs Review` row, never a dropped lead
-- [ ] ✅ **Checkpoint:** real message → correct structured JSON in the logs
+- [x] 🤖 `FormLeadSchema` widened to the studio form's fields — company,
+      budget, service, timing. They join the message as context lines rather
+      than bypassing extraction, so Gemini still reads one coherent enquiry
+- [x] ✅ **Checkpoint:** real message → correct structured JSON in the logs
 
 ## Phase 3 — Scoring
 
@@ -102,7 +122,11 @@ same deployments — but standardize on `-phi` to avoid the two-URLs confusion.)
       (skipped `googleapis`: ~100MB, crowds the Vercel bundle limit)
 - [x] 🤖 20 columns incl. score breakdown and an error column
 - [ ] 👤 Conditional formatting on the Status column — green / amber / red
-- [ ] ✅ **Checkpoint:** WhatsApp message → colour-coded row appears
+      (the only thing left between the current Sheet and the demo shot)
+- [ ] 👤 Delete the debugging rows before recording — the `wamid.TEST*` ones,
+      the `Log tail probe`, and Meta's sample `ABGGFlA5Fpa` from `16315551181`
+      dated 2017
+- [x] ✅ **Checkpoint:** message → row appears (colour-coding still pending)
 
 ## Phase 5 — Notify
 
@@ -111,15 +135,32 @@ same deployments — but standardize on `-phi` to avoid the two-URLs confusion.)
 - [x] 🤖 Only alert on Qualified (don't spam on every reject)
 - [x] 🤖 `lib/pipeline.ts` — extract → score → append → notify, with the row
       written before any notification so a failed send can't lose the lead
-- [ ] ✅ **Checkpoint:** full loop — message in, row written, alert buzzes back
+- [x] ✅ **Checkpoint:** full loop — message in, row written, alert buzzes back
 
 ## Phase 6 — Website form
 
-- [ ] 🤖 `POST /api/leads` — same pipeline, different entry point
+- [x] 🤖 `POST /api/leads` — same pipeline, different entry point. Awaits the
+      result instead of deferring to `after()`: no platform is retrying on a
+      slow reply, so the visitor gets the real outcome. CORS is wildcarded
+      with an `OPTIONS` preflight — the demo page is `file://` (origin `null`)
+- [x] 🤖 Wired the live studio site at
+      `AI Automation/Frontend Skill/index.html` — the `mailto:` hand-off is
+      now a POST, kept as the fallback so an unreachable agent can't eat an
+      enquiry. Endpoint is the `LEAD_ENDPOINT` constant in its `<script>`
+- [x] ✅ **Checkpoint:** form submission lands in the same Sheet — Victory
+      Hotels scored 95 Qualified (`25+20+20+10+20`), `₹4,00,000` parsed to
+      `400000 INR`, decision-maker caught from "I am the founder"
 - [ ] 🤖 `app/page.tsx` — demo form + live table of recent leads
-- [ ] ✅ **Checkpoint:** form submission lands in the same Sheet
+- [ ] ⏱️ Decide the form's latency story: ~22s measured on the **dev** server
+      against ~7.5s for the same pipeline in production. Measure properly
+      before quoting a number, and consider acknowledging immediately with
+      `after()` if the real figure stays this high
 
-## Phase 7 — The money metric
+## Phase 7 — The money metric → **deferred to Day 2**
+
+Day 1 ships without an accuracy number. That means the post must not quote one —
+the honest claims are the 34 passing rubric tests and the ~7.6s measured
+production round-trip, both of which were actually produced by running something.
 
 - [ ] 🤖 `fixtures/leads.json` — 20 dummy leads with hand-written expected output
 - [ ] 🤖 Include adversarial fixtures: spam, one-word, prompt injection
@@ -133,19 +174,32 @@ same deployments — but standardize on `-phi` to avoid the two-URLs confusion.)
 
 - [x] 🤖 **Missing-field follow-up (send side)** — `askFollowUp` computes the
       costliest gap and asks that exact question on WhatsApp
-- [ ] 🤖 **Follow-up (receive side)** — recognise the reply, merge it into the
-      original lead, re-score
-- [ ] 🤖 Thread state: link the reply to the original lead row
 - [x] 🤖 Score breakdown visible in the Sheet (`85 = 25+20+20+0+20`)
-- [ ] ✅ **Checkpoint:** score visibly jumps 70 amber → 95 green on reply
+- [ ] 🤖 **Follow-up (receive side)** → **Day 2** — recognise the reply, merge it
+      into the original lead, re-score. Needs thread state linking the reply to
+      the original row, so it's a build of its own
+- [ ] ✅ **Checkpoint (Day 2):** score visibly jumps 70 amber → 95 green on reply
 
 ## Phase 9 — Ship
 
-- [ ] 🤖 README with setup instructions
-- [ ] 🤖 Architecture diagram
-- [ ] 👤 `git init` + push to GitHub
+- [x] 🤖 README with setup instructions — including the two-layer WhatsApp
+      subscription trap, since that's the part worth reading
+- [x] 👤 Pushed to GitHub — `github.com/madhuri390/Qualify-Leads`
+- [ ] 👤 Commit + push the form work; production 404s on `/api/leads` today
 - [ ] 👤 Record the 60–90s demo
-- [ ] 👤 Instagram post — lead with the accuracy number and the injection test
+- [ ] 👤 Instagram post — **no accuracy number this time** (see Phase 7). Lead
+      with the working loop and the two-layer webhook bug
+- [ ] 🤖 Architecture diagram — the loop at the top of `CLAUDE.md` covers it;
+      only worth drawing if the post needs a visual
+
+## Day 1 — what actually shipped
+
+- WhatsApp Cloud API inbound, signature-verified and deduped on `wamid`
+- Website form inbound, live on the studio site, same pipeline
+- Gemini extraction under a fixed schema, validated again with Zod
+- Deterministic scoring, 34 unit tests, breakdown written to the Sheet
+- Append-only Sheet writes with an error column, never a dropped lead
+- WhatsApp alert to sales on Qualified, follow-up question on Follow-up
 
 ---
 

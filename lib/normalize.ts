@@ -76,6 +76,11 @@ export const FormLeadSchema = z.object({
   name: z.string().trim().max(200).optional(),
   email: z.string().trim().max(200).optional(),
   phone: z.string().trim().max(50).optional(),
+  company: z.string().trim().max(200).optional(),
+  /** Free text as typed — "₹1,50,000", "500 dollars". Gemini reads the number. */
+  budget: z.string().trim().max(100).optional(),
+  service: z.string().trim().max(200).optional(),
+  timing: z.string().trim().max(100).optional(),
 });
 
 export type FormLeadInput = z.infer<typeof FormLeadSchema>;
@@ -90,6 +95,10 @@ export function normalizeForm(input: FormLeadInput): Lead {
     input.name && `Name: ${input.name}`,
     input.email && `Email: ${input.email}`,
     input.phone && `Phone: ${input.phone}`,
+    input.company && `Company: ${input.company}`,
+    input.budget && `Budget: ${input.budget}`,
+    input.service && `Service: ${input.service}`,
+    input.timing && `Timing: ${input.timing}`,
   ]
     .filter(Boolean)
     .join("\n");
