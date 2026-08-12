@@ -4,6 +4,15 @@ Working tracker for the Day 1 build. Tick as we go.
 
 **Legend:** 👤 = only you can do this (dashboard / account step) · 🤖 = I do this in code
 
+**Stable production URL — use this one, always:**
+`https://qualify-leads-phi.vercel.app`
+This is what Vercel's **Domains** tab itself shows as canonical — use that tab,
+never the "Visit" button on a deployment card (that always links to a
+per-deployment hash URL that goes stale on the next push). Registered webhook
+got silently repointed to a stale hash URL twice already before landing here.
+(`qualify-leads-madhuri-veeramreddy.vercel.app` also works — same project,
+same deployments — but standardize on `-phi` to avoid the two-URLs confusion.)
+
 ---
 
 ## Phase 0 — Setup
@@ -41,6 +50,22 @@ Working tracker for the Day 1 build. Tick as we go.
       it ever reached GitHub (push protection caught it pre-push)
 - [x] 👤 Deployment Protection SSO wall was blocking every request,
       including Meta's — disabled in Settings → Deployment Protection
+- [x] 👤 **Stable production domain found:** `qualify-leads-madhuri-veeramreddy.vercel.app`
+      — the earlier hash URL (`qualify-leads-od2qgrqkd-...`) is a frozen
+      per-deployment URL and silently stopped receiving code updates the
+      moment we pushed again. Use the stable domain for all Meta config.
+      (`qualify-leads.vercel.app` looks tempting but is someone else's
+      unrelated product — confirmed by response body, not just guessed.)
+- [x] 🤖 Fixed `gemini-2.5-flash` → `gemini-3.6-flash` (deprecated for new
+      users mid-build). Verified end-to-end on the stable production domain
+- [x] 👤 Regenerated `WHATSAPP_ACCESS_TOKEN` — the old System User token
+      couldn't see the phone number ID at all (`does not exist / missing
+      permissions`) despite the ID and token both being individually valid;
+      new token resolved it immediately
+- [x] 👤 Fixed `SALES_ALERT_NUMBER` — was missing the `91` country code
+- [x] ✅ **Full loop confirmed on production:** signed webhook → Gemini
+      extraction → score 85 (Qualified) → Sheet row with no error →
+      WhatsApp alert delivered
 - [x] 👤 Add all env vars in Vercel → Settings → Environment Variables —
       confirmed live via a signed GET against the deployed URL
 - [ ] 👤 Register the webhook URL + verify token in the Meta dashboard,

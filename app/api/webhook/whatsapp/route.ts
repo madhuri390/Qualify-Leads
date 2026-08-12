@@ -31,8 +31,15 @@ export async function POST(request: Request) {
   // The signature covers the exact bytes Meta sent, so read the body as text
   // and parse it ourselves rather than calling request.json() first.
   const raw = await request.text();
+  const signatureValid = isValidSignature(raw, request.headers.get("x-hub-signature-256"));
 
-  if (!isValidSignature(raw, request.headers.get("x-hub-signature-256"))) {
+  // Logged before anything can reject the request. Vercel's runtime logs only
+  // surface invocations that print something, so a delivery that 401s or
+  // carries no messages is otherwise completely invisible — which is exactly
+  // the case that is hardest to debug.
+  console.log("[webhook] inbound", { bytes: raw.length, signatureValid, ...summarize(raw) });
+
+  if (!signatureValid) {
     return new Response("Invalid signature", { status: 401 });
   }
 
@@ -67,6 +74,36 @@ export async function POST(request: Request) {
   });
 
   return Response.json({ ok: true, received: leads.length });
+}
+
+/**
+ * Describes the shape of a payload for the logs — enough to tell a real
+ * message from a status callback, and never any message content.
+ *
+ * `entry[].id` is the WhatsApp Business Account ID, which is worth logging:
+ * it is the one identifier the Graph API will not hand back from a phone
+ * number ID, and it is needed to inspect account-level subscriptions.
+ */
+function summarize(raw: string) {
+  try {
+    const body = JSON.parse(raw) as {
+      entry?: {
+        id?: string;
+        changes?: { field?: string; value?: { messages?: unknown[]; statuses?: unknown[] } }[];
+      }[];
+    };
+    const entries = body.entry ?? [];
+    const changes = entries.flatMap((entry) => entry.changes ?? []);
+
+    return {
+      wabaIds: entries.map((entry) => entry.id).filter(Boolean),
+      fields: changes.map((change) => change.field),
+      messages: changes.reduce((n, c) => n + (c.value?.messages?.length ?? 0), 0),
+      statuses: changes.reduce((n, c) => n + (c.value?.statuses?.length ?? 0), 0),
+    };
+  } catch {
+    return { unparseable: true };
+  }
 }
 
 /**
