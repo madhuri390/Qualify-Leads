@@ -112,9 +112,9 @@ same deployments — but standardize on `-phi` to avoid the two-URLs confusion.)
 
 - [x] 🤖 `lib/score.ts` — pure function, INR bands, score + breakdown
 - [x] 🤖 Fixed USD→INR rate constant (not fetched, so scores are reproducible)
-- [x] 🤖 34 unit tests: band boundaries, all-null, max-score, determinism,
+- [x] 🤖 33 unit tests: band boundaries, all-null, max-score, determinism,
       `score === sum(breakdown)`, injection-can't-move-the-score
-- [x] ✅ **Checkpoint:** `npm test` — 34 passing
+- [x] ✅ **Checkpoint:** `npm test` — 33 passing
 
 ## Phase 4 — Google Sheet
 
@@ -159,7 +159,7 @@ same deployments — but standardize on `-phi` to avoid the two-URLs confusion.)
 ## Phase 7 — The money metric → **deferred to Day 2**
 
 Day 1 ships without an accuracy number. That means the post must not quote one —
-the honest claims are the 34 passing rubric tests and the ~7.6s measured
+the honest claims are the 33 passing rubric tests and the ~7.6s measured
 production round-trip, both of which were actually produced by running something.
 
 - [ ] 🤖 `fixtures/leads.json` — 20 dummy leads with hand-written expected output
@@ -197,7 +197,7 @@ production round-trip, both of which were actually produced by running something
 - WhatsApp Cloud API inbound, signature-verified and deduped on `wamid`
 - Website form inbound, live on the studio site, same pipeline
 - Gemini extraction under a fixed schema, validated again with Zod
-- Deterministic scoring, 34 unit tests, breakdown written to the Sheet
+- Deterministic scoring, 33 unit tests, breakdown written to the Sheet
 - Append-only Sheet writes with an error column, never a dropped lead
 - WhatsApp alert to sales on Qualified, follow-up question on Follow-up
 

@@ -28,10 +28,8 @@ describe("budget bands", () => {
   it.each([
     [null, 0],
     [0, 5],
-    [49_999, 5],
-    [50_000, 15],
-    [199_999, 15],
-    [200_000, 25],
+    [99_999, 5],
+    [100_000, 25],
     [999_999, 25],
     [1_000_000, 30],
     [5_000_000, 30],
@@ -41,7 +39,7 @@ describe("budget bands", () => {
   });
 
   it("converts USD before banding", () => {
-    // $3000 → ₹264,000 at the fixed rate, which lands in the ₹2L–₹10L band.
+    // $3000 → ₹264,000 at the fixed rate, which lands in the ₹1L–₹10L band.
     expect(toInr(3000, "USD")).toBe(3000 * USD_TO_INR);
     expect(scoreBudget(lead({ budget_amount: 3000, budget_currency: "USD" })))
       .toBe(25);
@@ -55,6 +53,16 @@ describe("budget bands", () => {
   it("ignores negative and non-finite amounts", () => {
     expect(scoreBudget(lead({ budget_amount: -5000 }))).toBe(0);
     expect(scoreBudget(lead({ budget_amount: Number.NaN }))).toBe(0);
+  });
+
+  it("cannot qualify below the ₹1L floor, however good the rest of the lead is", () => {
+    // The floor is the reason the band exists, so assert the consequence
+    // rather than the points — this is what breaks if the bands are retuned.
+    const result = scoreLead({ ...PERFECT, budget_amount: 99_999 });
+
+    expect(result.score).toBe(75);
+    expect(result.status).toBe("Follow-up");
+    expect(result.biggest_gap).toBe("budget");
   });
 });
 

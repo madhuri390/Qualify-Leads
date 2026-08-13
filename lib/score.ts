@@ -28,12 +28,18 @@ export const MAX_POINTS: ScoreBreakdown = {
   decision_maker: 20,
 };
 
-/** Budget bands in INR. Indian SMB leads, so a flat USD threshold is useless. */
+/**
+ * Budget bands in INR. Indian SMB leads, so a flat USD threshold is useless.
+ *
+ * ₹1L is the floor we take on. Below it a lead scores 5, and since everything
+ * else on the rubric adds up to 70, a sub-₹1L enquiry cannot reach the 80
+ * needed to qualify no matter how perfect the rest of it looks. That ceiling
+ * is the point of the band — not the 5 points themselves.
+ */
 const BUDGET_BANDS: Array<{ min: number; points: number; label: string }> = [
   { min: 1_000_000, points: 30, label: "above ₹10L" },
-  { min: 200_000, points: 25, label: "₹2L–₹10L" },
-  { min: 50_000, points: 15, label: "₹50k–₹2L" },
-  { min: 0, points: 5, label: "under ₹50k" },
+  { min: 100_000, points: 25, label: "₹1L–₹10L" },
+  { min: 0, points: 5, label: "under ₹1L" },
 ];
 
 const FREE_EMAIL_DOMAINS = new Set([

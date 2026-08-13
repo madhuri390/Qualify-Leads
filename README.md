@@ -28,7 +28,7 @@ network. Same input, same score, every time.
 The spec this was built from originally had the model emit `"score": 92`. The
 rubric can't even produce 92 — every value in it is a multiple of 10. A model
 inventing numbers is unauditable and untestable. A pure function is both, which
-is why the rubric has 34 unit tests and the prompt has none.
+is why the rubric has 33 unit tests and the prompt has none.
 
 Extraction is called with `responseMimeType: "application/json"` and an explicit
 schema, and the reply is *still* parsed through Zod. The schema constrains; Zod
@@ -101,7 +101,7 @@ comes from. Two things that cost the most time if missed:
 
 ```bash
 npm run dev          # local server
-npm test             # 34 unit tests, all on the scoring rubric
+npm test             # 33 unit tests, all on the scoring rubric
 npm run sheet:init   # write the Sheet header row
 npm run sheet:read   # dump current rows
 npm run webhook:test # signed webhook → local or deployed URL, no phone needed
@@ -131,7 +131,7 @@ WEBHOOK_URL=https://your-app.vercel.app/api/webhook/whatsapp \
 
 ## Measured, not claimed
 
-- **34/34** unit tests pass on the scoring rubric — band boundaries, all-null
+- **33/33** unit tests pass on the scoring rubric — band boundaries, all-null
   input, max score, determinism, `score === sum(breakdown)`, and a check that a
   prompt-injection string can't move the score.
 - **~7.6s** end-to-end on production for one WhatsApp message: inbound → Gemini →
