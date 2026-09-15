@@ -1,6 +1,7 @@
+import { GoogleGenAI } from "@google/genai";
 import { z } from "zod";
-import { optionalEnv } from "./env";
-import { completeJson } from "./openrouter";
+import { optionalEnv, requireEnv } from "./env";
+import { MODEL } from "./extract";
 import type {
   GoogleReviewSignal,
   InstagramSignal,
@@ -189,6 +190,12 @@ interface SynthesisInput {
   websiteText: string | null;
 }
 
+let client: GoogleGenAI | null = null;
+function getClient(): GoogleGenAI {
+  client ??= new GoogleGenAI({ apiKey: requireEnv("GEMINI_API_KEY") });
+  return client;
+}
+
 async function synthesizeAnalysis(input: SynthesisInput): Promise<{
   services: string | null;
   painPoints: string | null;
@@ -209,50 +216,34 @@ async function synthesizeAnalysis(input: SynthesisInput): Promise<{
     .filter(Boolean)
     .join("\n\n");
 
-  const { text, error } = await completeJson({
-    systemInstruction: ANALYSIS_SYSTEM_INSTRUCTION,
-    content: sections,
-    jsonSchema: ANALYSIS_JSON_SCHEMA,
-    schemaName: "business_analysis",
-  });
+  const empty = { services: null, painPoints: null, summary: null, websiteSummary: null };
 
-  if (error) {
-    return { services: null, painPoints: null, summary: null, websiteSummary: null, error };
-  }
-  if (!text) {
-    return { services: null, painPoints: null, summary: null, websiteSummary: null, error: "Empty response" };
-  }
-
-  let json: unknown;
   try {
-    json = JSON.parse(text);
-  } catch {
-    return {
-      services: null,
-      painPoints: null,
-      summary: null,
-      websiteSummary: null,
-      error: "Model response was not valid JSON",
-    };
-  }
+    const response = await getClient().models.generateContent({
+      model: MODEL,
+      contents: sections,
+      config: {
+        systemInstruction: ANALYSIS_SYSTEM_INSTRUCTION,
+        responseMimeType: "application/json",
+        responseJsonSchema: ANALYSIS_JSON_SCHEMA,
+      },
+    });
 
-  const parsed = AnalysisSchema.safeParse(json);
-  if (!parsed.success) {
-    return {
-      services: null,
-      painPoints: null,
-      summary: null,
-      websiteSummary: null,
-      error: "Response failed validation",
-    };
-  }
+    const text = response.text;
+    if (!text) return { ...empty, error: "Empty response" };
 
-  return {
-    services: parsed.data.services,
-    painPoints: parsed.data.pain_points,
-    summary: parsed.data.summary,
-    websiteSummary: parsed.data.website_summary,
-  };
+    const parsed = AnalysisSchema.safeParse(JSON.parse(text));
+    if (!parsed.success) return { ...empty, error: "Response failed validation" };
+
+    return {
+      services: parsed.data.services,
+      painPoints: parsed.data.pain_points,
+      summary: parsed.data.summary,
+      websiteSummary: parsed.data.website_summary,
+    };
+  } catch (error) {
+    return { ...empty, error: error instanceof Error ? error.message : "Unknown synthesis error" };
+  }
 }
 
 // ---- Orchestration ------------------------------------------------------------

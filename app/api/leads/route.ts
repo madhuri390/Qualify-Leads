@@ -51,13 +51,26 @@ export async function OPTIONS() {
 /** Read-only, used by the dashboard. Not CORS-restricted to the dashboard's
  * own origin for the same reason as the form: no cookies, no auth. */
 export async function GET() {
-  const [leads, approvedIds, rejectedIds, researchRows, outcomes] = await Promise.all([
-    readLeadRows(),
-    listApprovedLeadIds(),
-    listRejectedLeadIds(),
-    readResearchRows(),
-    readLatestOutcomes(),
-  ]);
+  let leads, approvedIds, rejectedIds, researchRows, outcomes;
+  try {
+    [leads, approvedIds, rejectedIds, researchRows, outcomes] = await Promise.all([
+      readLeadRows(),
+      listApprovedLeadIds(),
+      listRejectedLeadIds(),
+      readResearchRows(),
+      readLatestOutcomes(),
+    ]);
+  } catch (error) {
+    // A thrown error inside a route handler renders Next's default error
+    // page (HTML, or nothing) instead of JSON — the dashboard's `.json()`
+    // call would fail on that with a confusing "Unexpected end of JSON
+    // input" instead of the real cause. Surface it properly instead.
+    console.error("[dashboard] failed to read leads", error);
+    return Response.json(
+      { ok: false, error: error instanceof Error ? error.message : "Failed to load leads" },
+      { status: 500, headers: CORS },
+    );
+  }
 
   const researchByLeadId = new Map(researchRows.map((r) => [r.leadId, r]));
 

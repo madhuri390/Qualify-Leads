@@ -7,13 +7,21 @@
  * Its real job is proving the Google auth chain works before we depend on it
  * from a webhook, where failures are much harder to read.
  *
- * Needs three tabs to already exist in the Sheet — the Sheets API can't
- * create one: "Leads" (already there from Day 1), plus new "Approvals" and
- * "Research" tabs for the business-research stage. Add the two new tabs by
- * hand (bottom-left "+" in Google Sheets) before running this.
+ * Needs five tabs to already exist in the Sheet — the Sheets API can't
+ * create one: "Leads" (already there from Day 1), plus "Approvals",
+ * "Research", "Rejections", and "Outcomes" for everything since. Add the
+ * new tabs by hand (bottom-left "+" in Google Sheets) before running this.
  */
 import "./load-env";
-import { APPROVAL_COLUMNS, COLUMNS, RESEARCH_COLUMNS, writeHeaderRow, writeSecondaryHeaderRows } from "../lib/sheets";
+import {
+  APPROVAL_COLUMNS,
+  COLUMNS,
+  OUTCOME_COLUMNS,
+  REJECTION_COLUMNS,
+  RESEARCH_COLUMNS,
+  writeHeaderRow,
+  writeSecondaryHeaderRows,
+} from "../lib/sheets";
 
 async function main() {
   await writeHeaderRow();
@@ -23,6 +31,8 @@ async function main() {
   await writeSecondaryHeaderRows();
   console.log(`✓ Approvals header row written — ${APPROVAL_COLUMNS.join(" | ")}`);
   console.log(`✓ Research header row written — ${RESEARCH_COLUMNS.join(" | ")}`);
+  console.log(`✓ Rejections header row written — ${REJECTION_COLUMNS.join(" | ")}`);
+  console.log(`✓ Outcomes header row written — ${OUTCOME_COLUMNS.join(" | ")}`);
 
   console.log(
     `\nNext: add conditional formatting on the Status column ` +

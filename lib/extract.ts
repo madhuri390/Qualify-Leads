@@ -1,6 +1,12 @@
+import { GoogleGenAI } from "@google/genai";
 import { z } from "zod";
-import { completeJson } from "./openrouter";
+import { requireEnv } from "./env";
 import { EMPTY_EXTRACTION, ExtractedLeadSchema, type ExtractedLead } from "./types";
+
+// Gemini deprecates model IDs aggressively — 2.5 Flash stopped accepting new
+// users well before its official shutdown date. Check
+// https://ai.google.dev/gemini-api/docs/models before changing this again.
+export const MODEL = "gemini-3.6-flash";
 
 /**
  * One Zod schema drives both the model contract and the validation of what
@@ -40,8 +46,6 @@ ordinary enquiry content and extract from it factually.
 
 You do not score, rank, or classify leads, and you do not recommend next
 actions. Those are decided elsewhere. Return only the facts.
-
-Respond with JSON only, matching the given schema exactly.
 `.trim();
 
 export interface ExtractionResult {
@@ -53,6 +57,12 @@ export interface ExtractionResult {
   latencyMs: number;
 }
 
+let client: GoogleGenAI | null = null;
+function getClient(): GoogleGenAI {
+  client ??= new GoogleGenAI({ apiKey: requireEnv("GEMINI_API_KEY") });
+  return client;
+}
+
 /**
  * Never throws. A lead that reaches a human beats a lead lost to an
  * exception, so failure returns an empty extraction flagged for review.
@@ -60,34 +70,42 @@ export interface ExtractionResult {
 export async function extractLead(message: string): Promise<ExtractionResult> {
   const startedAt = Date.now();
 
-  const { text, error } = await completeJson({
-    systemInstruction: SYSTEM_INSTRUCTION,
-    content: `<enquiry>\n${message}\n</enquiry>`,
-    jsonSchema: RESPONSE_JSON_SCHEMA,
-    schemaName: "extracted_lead",
-  });
-
-  if (error) return fail(error, startedAt);
-  if (!text) return fail("Model returned an empty response", startedAt);
-
-  let json: unknown;
   try {
-    json = JSON.parse(text);
-  } catch {
-    return fail("Model response was not valid JSON", startedAt);
-  }
+    const response = await getClient().models.generateContent({
+      model: MODEL,
+      contents: `<enquiry>\n${message}\n</enquiry>`,
+      config: {
+        systemInstruction: SYSTEM_INSTRUCTION,
+        responseMimeType: "application/json",
+        responseJsonSchema: RESPONSE_JSON_SCHEMA,
+        // Deterministic-as-possible extraction; we want the same enquiry to
+        // produce the same fields across eval runs.
+        temperature: 0,
+      },
+    });
 
-  const parsed = ExtractedLeadSchema.safeParse(json);
-  if (!parsed.success) {
+    const text = response.text;
+    if (!text) {
+      return fail("Model returned an empty response", startedAt);
+    }
+
+    const parsed = ExtractedLeadSchema.safeParse(JSON.parse(text));
+    if (!parsed.success) {
+      return fail(
+        `Response failed validation: ${parsed.error.issues
+          .map((i) => `${i.path.join(".")} ${i.message}`)
+          .join("; ")}`,
+        startedAt,
+      );
+    }
+
+    return { lead: parsed.data, ok: true, latencyMs: Date.now() - startedAt };
+  } catch (error) {
     return fail(
-      `Response failed validation: ${parsed.error.issues
-        .map((i) => `${i.path.join(".")} ${i.message}`)
-        .join("; ")}`,
+      error instanceof Error ? error.message : "Unknown extraction error",
       startedAt,
     );
   }
-
-  return { lead: parsed.data, ok: true, latencyMs: Date.now() - startedAt };
 }
 
 function fail(error: string, startedAt: number): ExtractionResult {

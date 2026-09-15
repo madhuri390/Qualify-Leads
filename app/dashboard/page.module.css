@@ -20,7 +20,11 @@
   --lift-1: 0 1px 2px rgb(26 22 20 / 0.05), 0 2px 8px -2px rgb(26 22 20 / 0.06);
 
   display: flex;
-  min-height: 100%;
+  /* 100% (not 100vh) would need every ancestor up to html to have an
+     explicit height for the percentage to resolve — layout.tsx's body only
+     sets min-height, which most browsers treat as "auto" for this purpose.
+     100vh sidesteps that chain entirely. */
+  min-height: 100vh;
   background: var(--paper);
   color: var(--ink);
 }

@@ -16,15 +16,17 @@ Read `Day_01_AI_Lead_Qualification_Agent.md` for the product spec and
 ```
 WhatsApp message / website form
   → normalize to one Lead shape
-  → OpenRouter (LLM) extracts structured fields   ← the only LLM step
-  → score.ts applies the rubric                   ← pure code, no LLM
+  → Gemini extracts structured fields   ← the only LLM step
+  → score.ts applies the rubric         ← pure code, no LLM
   → append row to Google Sheet
   → WhatsApp alert back to the sales number
 ```
 
-Originally built on the direct Gemini API; switched to OpenRouter after the Gemini key's
-prepayment credits ran out mid-build, calling the free `inclusionai/ling-3.0-flash-vl:free`
-model (20 req/min, 50 req/day cap). See `lib/openrouter.ts`.
+Briefly tried OpenRouter mid-build (after the original Gemini key's prepayment credits ran
+out) to see free-model options, including an NVIDIA Nemotron variant — reverted back to the
+direct Gemini API by request. If `GEMINI_API_KEY` ever shows "prepayment credits are
+depleted" again, get a fresh key from a Google Cloud project with no billing account linked
+rather than assuming there's no free tier.
 
 Build it in that order. Each stage must work end-to-end before starting the next.
 
@@ -35,7 +37,7 @@ Build it in that order. Each stage must work end-to-end before starting the next
 | Layer | Choice | Notes |
 |---|---|---|
 | App | Next.js (App Router) + TypeScript | One deployable. API routes are the backend. |
-| LLM | OpenRouter (free tier) | `response_format: json_schema`, not prompt-begging for JSON |
+| LLM | Gemini free tier | Structured output mode, not prompt-begging for JSON |
 | Datastore | Google Sheet | Append-only. The Sheet *is* the dashboard. |
 | Inbound | WhatsApp Cloud API + web form | Cloud API setup already done |
 | Notify | WhatsApp message back | Not email — reuses code we already have |
@@ -64,7 +66,7 @@ makes this engineering rather than an API wrapper. Unit test it.
 
 ### 2. Structured output, then validate anyway
 
-Call OpenRouter with `response_format: { type: "json_schema", ... }` and an explicit schema.
+Call Gemini with `responseMimeType: "application/json"` and an explicit `responseSchema`.
 Then still parse the result through Zod. The schema constrains; Zod proves.
 
 Never write "return JSON only" in a prompt and hope.
@@ -86,7 +88,7 @@ concurrency problem the Sheets API has and keeps a full audit trail of what the 
 
 ### 6. Fail loud, never silently
 
-If the LLM returns something unparseable, write the row anyway with `status: "needs_review"`
+If Gemini returns something unparseable, write the row anyway with `status: "needs_review"`
 and the raw text in an error column. A lead that reaches a human beats a lead that vanishes
 into a swallowed exception.
 
@@ -102,7 +104,7 @@ app/
 lib/
   types.ts                        the Lead shape both channels normalize into
   normalize.ts                    WhatsApp payload | form body → Lead
-  extract.ts                      OpenRouter call + Zod schema
+  extract.ts                      Gemini call + Zod schema
   score.ts                        the rubric — PURE, no I/O
   sheets.ts                       append-only writes
   notify.ts                       WhatsApp alert to the sales number
@@ -134,9 +136,8 @@ Rules:
   and the sales alert number to the allowlist early, not on demo day.
 - **24-hour session window** — outside it, only approved template messages send. Fine for
   this build since we always reply to an inbound message.
-- **OpenRouter's free model** is capped at 20 req/min and 50 req/day (1,000/day after a
-  one-time $10 top-up). Fine for a demo one lead at a time; `scripts/eval.ts` firing 20
-  fixtures in a tight loop can burn most of a day's cap — add a small delay.
+- **Gemini free tier** is roughly 15 requests/minute. Never a problem for a demo; will be
+  one if `scripts/eval.ts` fires 20 fixtures in a tight loop. Add a small delay.
 - **Google Sheets API** needs the sheet shared with the service-account email as Editor.
   Forgetting this produces a confusing 403.
 - **Vercel** functions are stateless — no in-memory dedupe cache. The `wamid` column is the
@@ -151,8 +152,8 @@ The deliverable needs one verifiable number. It comes from `scripts/eval.ts`:
 > 20 hand-written dummy leads, each with expected extraction output.
 > Run them through the real pipeline. Print field-level accuracy.
 
-Also measure and print real end-to-end latency. Don't claim "under 30 seconds" — show the
-actual figure.
+Also measure and print real end-to-end latency. Don't claim "under 30 seconds" — Gemini
+Flash does this in ~2s, so show the actual figure.
 
 Do not report a number that hasn't actually been produced by running the eval.
 
