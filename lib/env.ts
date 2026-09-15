@@ -22,3 +22,13 @@ export function requireEnv(name: string): string {
 export function requirePrivateKey(name: string): string {
   return requireEnv(name).replace(/\\n/g, "\n");
 }
+
+/**
+ * For research sources that are allowed to be unconfigured — a lead with no
+ * Instagram handle, or a deployment that hasn't set up Places yet, should
+ * degrade to "unavailable" rather than fail the whole research stage.
+ */
+export function optionalEnv(name: string): string | null {
+  const value = process.env[name];
+  return value && value.trim() !== "" ? value : null;
+}

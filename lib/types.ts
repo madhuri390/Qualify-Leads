@@ -65,6 +65,14 @@ export interface Lead {
   /** The raw enquiry text handed to the LLM. */
   message: string;
   receivedAt: string;
+  /**
+   * Identifiers for the business-research stage. Structured fields, not
+   * folded into `message` — the LLM extraction step should never have to
+   * parse a URL or handle out of prose, and the research step needs them
+   * as data, not text to re-derive.
+   */
+  website: string | null;
+  instagramHandle: string | null;
 }
 
 export type LeadStatus =
@@ -89,4 +97,44 @@ export interface ScoreResult {
   next_action: string;
   /** Which criterion cost the most points — drives the follow-up question. */
   biggest_gap: keyof ScoreBreakdown | null;
+}
+
+/**
+ * What the research stage found, once a Qualified/Follow-up lead has been
+ * approved. Each source is independently optional — a lead with no website
+ * and a personal (non-Business) Instagram account still gets whatever the
+ * others found, rather than the whole stage failing.
+ */
+export interface GoogleReviewSignal {
+  rating: number | null;
+  reviewCount: number | null;
+  /** One representative recent review, verbatim, for the analysis prompt. */
+  snippet: string | null;
+}
+
+export interface InstagramSignal {
+  /** False when the handle exists but isn't a Business/Creator account — Business Discovery only reads those. */
+  available: boolean;
+  recentCaptions: string[];
+  postCount: number | null;
+}
+
+export interface ResearchResult {
+  leadId: string;
+  generatedAt: string;
+  services: string | null;
+  painPoints: string | null;
+  analysisSummary: string | null;
+  googleReviews: GoogleReviewSignal | null;
+  instagram: InstagramSignal | null;
+  websiteSummary: string | null;
+  error?: string;
+  /**
+   * Whether the WhatsApp booking message actually sent. Written into the
+   * same Research row rather than tracked separately, so "call scheduled"
+   * survives a page reload instead of only existing in one approve
+   * response.
+   */
+  bookingMessageSent: boolean;
+  bookingError?: string;
 }

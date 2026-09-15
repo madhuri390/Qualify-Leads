@@ -1,5 +1,5 @@
 import { requireEnv } from "./env";
-import type { ExtractedLead, Lead, ScoreResult } from "./types";
+import type { ExtractedLead, Lead, ResearchResult, ScoreResult } from "./types";
 import { formatBreakdown } from "./score";
 
 /**
@@ -90,6 +90,31 @@ export async function askFollowUp(
 
   await sendText(lead.from, question);
   return true;
+}
+
+/**
+ * Sent to the LEAD, not sales — the payoff of the research stage. This is a
+ * business-initiated message, so it only lands if the 24h session window is
+ * already open (sales manually messaged this lead first). No template is
+ * wired up for cold outreach yet; see CLAUDE.md's WA template note.
+ */
+export async function sendBookingMessage(
+  lead: Lead,
+  extracted: ExtractedLead,
+  research: Pick<ResearchResult, "analysisSummary">,
+): Promise<void> {
+  if (!lead.from) throw new Error("Lead has no WhatsApp number to message");
+
+  const calendlyLink = requireEnv("CALENDLY_LINK");
+  const who = extracted.company ?? "there";
+
+  const lines = [
+    `Hey! Thanks for reaching out, ${who} 👋`,
+    research.analysisSummary,
+    `Would love to grab 15 minutes to talk it through — pick a time here: ${calendlyLink}`,
+  ].filter(Boolean);
+
+  await sendText(lead.from, lines.join("\n\n"));
 }
 
 const FOLLOW_UP_QUESTIONS: Record<string, string> = {

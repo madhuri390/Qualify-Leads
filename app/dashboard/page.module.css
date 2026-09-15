@@ -1,0 +1,456 @@
+/*
+ * Tokens lifted from the A.M.A. brand guide (brand_assets/brand.md) and the
+ * live site's own globals.css, so this dashboard reads as the same product
+ * family rather than a generic admin theme:
+ *   --ink #1a1614, --accent #fc362d, --paper #f5efe6,
+ *   --linen #c7bfae, --graphite #3d3934
+ *
+ * Layering follows the brand doc: Paper (base) -> white (elevated cards) ->
+ * Ink (floating/contrast chrome — here, the nav rail). Red is the site's one
+ * accent, reserved for "needs your attention": Follow-up status, and every
+ * primary action button.
+ */
+.app {
+  --ink: #1a1614;
+  --accent: #fc362d;
+  --paper: #f5efe6;
+  --linen: #c7bfae;
+  --graphite: #3d3934;
+  --rule: rgb(26 22 20 / 0.12);
+  --lift-1: 0 1px 2px rgb(26 22 20 / 0.05), 0 2px 8px -2px rgb(26 22 20 / 0.06);
+
+  display: flex;
+  min-height: 100%;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+/* ---- Sidebar ------------------------------------------------------------ */
+.sidebar {
+  flex: none;
+  width: 240px;
+  background: var(--ink);
+  color: var(--paper);
+  padding: 28px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.brand {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.brandMark {
+  font-family: var(--font-geist-sans);
+  font-weight: 600;
+  font-size: 1.25rem;
+  letter-spacing: -0.01em;
+}
+
+.brandMark i {
+  color: var(--accent);
+  font-style: italic;
+}
+
+.brandSub {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgb(245 239 230 / 0.5);
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.navItem {
+  display: block;
+  padding: 9px 12px;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: rgb(245 239 230 / 0.65);
+  text-decoration: none;
+}
+
+.navItem[data-active="true"] {
+  background: rgb(245 239 230 / 0.1);
+  color: var(--paper);
+}
+
+/* ---- Main ---------------------------------------------------------------- */
+.main {
+  flex: 1;
+  min-width: 0;
+  padding: 32px 28px 80px;
+}
+
+.shell {
+  max-width: 980px;
+  margin: 0 auto;
+}
+
+.title {
+  font-family: var(--font-geist-sans);
+  font-weight: 600;
+  font-size: 1.5rem;
+  letter-spacing: -0.02em;
+  margin-bottom: 20px;
+}
+
+/* ---- Stat tiles ----------------------------------------------------------- */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.statTile {
+  background: #fff;
+  border: 1px solid var(--rule);
+  border-radius: 14px;
+  box-shadow: var(--lift-1);
+  padding: 16px 18px;
+}
+
+.statValue {
+  font-family: var(--font-geist-mono);
+  font-size: 1.75rem;
+  font-weight: 500;
+  line-height: 1.1;
+  display: block;
+}
+
+.statLabel {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--graphite);
+  opacity: 0.7;
+}
+
+/* ---- Table ----------------------------------------------------------------- */
+.tableCard {
+  background: #fff;
+  border: 1px solid var(--rule);
+  border-radius: 16px;
+  box-shadow: var(--lift-1);
+  overflow: hidden;
+}
+
+.tableScroll {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.table th {
+  text-align: left;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--graphite);
+  opacity: 0.7;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--rule);
+  white-space: nowrap;
+}
+
+.table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--rule);
+  vertical-align: top;
+}
+
+.table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.tableRow {
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+.tableRow:hover {
+  background: var(--paper);
+}
+
+.company {
+  font-family: var(--font-geist-sans);
+  font-weight: 600;
+}
+
+.meta {
+  font-family: var(--font-geist-mono);
+  font-size: 0.75rem;
+  color: var(--graphite);
+  margin-top: 2px;
+}
+
+.badge {
+  display: inline-block;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgb(26 22 20 / 0.08);
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.badge[data-status="Follow-up"] {
+  background: rgb(252 54 45 / 0.1);
+  color: var(--accent);
+}
+
+/* Stage badges: red marks "waiting on the lead" (Scheduling/Interested —
+   the same accent used for Follow-up, same "needs attention" meaning);
+   solid ink marks the terminal, calm state (Call Scheduled). */
+.badge[data-stage="Scheduling"],
+.badge[data-stage="Interested"] {
+  background: rgb(252 54 45 / 0.1);
+  color: var(--accent);
+}
+
+.badge[data-stage="Call Scheduled"] {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.badgeRow {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.mono {
+  font-family: var(--font-geist-mono);
+  white-space: nowrap;
+}
+
+.approveBtn {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  padding: 7px 16px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  font-family: var(--font-geist-sans);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.2s ease, opacity 0.2s ease;
+}
+.approveBtn:hover {
+  background: var(--ink);
+}
+.approveBtn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.rowActions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.rejectBtn,
+.secondaryBtn {
+  background: none;
+  color: var(--graphite);
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  padding: 7px 16px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  font-family: var(--font-geist-sans);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
+}
+.rejectBtn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.secondaryBtn:hover {
+  border-color: var(--ink);
+  color: var(--ink);
+}
+.rejectBtn:disabled,
+.secondaryBtn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.approvedTag,
+.scheduledTag {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--graphite);
+  white-space: nowrap;
+}
+
+.empty {
+  background: #fff;
+  border: 1px solid var(--rule);
+  border-radius: 16px;
+  box-shadow: var(--lift-1);
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--graphite);
+}
+
+/* ---- Detail drawer ---------------------------------------------------------- */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgb(26 22 20 / 0.35);
+  z-index: 20;
+}
+
+.drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(460px, 100vw);
+  background: #fff;
+  z-index: 21;
+  overflow-y: auto;
+  box-shadow: -12px 0 32px rgb(26 22 20 / 0.18);
+  padding: 28px 24px 40px;
+}
+
+.drawerHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.drawerTitle {
+  font-family: var(--font-geist-sans);
+  font-weight: 600;
+  font-size: 1.25rem;
+}
+
+.drawerClose {
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  line-height: 1;
+  color: var(--graphite);
+  cursor: pointer;
+  padding: 4px;
+}
+
+.section {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--rule);
+}
+
+.sectionLabel {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--graphite);
+  opacity: 0.7;
+  margin-bottom: 12px;
+}
+
+.fieldGrid {
+  display: grid;
+  gap: 12px;
+}
+
+.fieldGrid dt {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--graphite);
+  opacity: 0.75;
+}
+
+.fieldGrid dd {
+  font-size: 0.9375rem;
+  margin-top: 2px;
+  line-height: 1.45;
+}
+
+.summary {
+  background: var(--paper);
+  border-radius: 12px;
+  padding: 14px 16px;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  margin-bottom: 14px;
+}
+
+.links {
+  display: flex;
+  gap: 14px;
+  margin-top: 4px;
+}
+.links a {
+  color: var(--accent);
+  font-size: 0.875rem;
+  text-decoration: none;
+}
+.links a:hover {
+  text-decoration: underline;
+}
+
+.drawerFooter {
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid var(--rule);
+}
+
+.error {
+  font-size: 0.8125rem;
+  color: var(--accent);
+  margin-top: 8px;
+}
+
+/* ---- Responsive ------------------------------------------------------------- */
+@media (max-width: 860px) {
+  .app {
+    flex-direction: column;
+  }
+  .sidebar {
+    width: auto;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+  }
+  .nav {
+    flex-direction: row;
+  }
+  .main {
+    padding: 20px 16px 60px;
+  }
+  .stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .drawer {
+    width: 100vw;
+  }
+}

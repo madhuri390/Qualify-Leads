@@ -22,7 +22,7 @@ async function main() {
 
   const tab = process.env.GOOGLE_SHEET_TAB?.trim() || "Leads";
   const sheetId = requireEnv("GOOGLE_SHEET_ID");
-  const range = encodeURIComponent(`'${tab.replace(/'/g, "''")}'!A2:T`);
+  const range = encodeURIComponent(`'${tab.replace(/'/g, "''")}'!A2:V`);
 
   const response = await fetch(
     `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}`,

@@ -64,6 +64,11 @@ export function normalizeWhatsApp(body: unknown): Lead[] {
           receivedAt: message.timestamp
             ? new Date(Number(message.timestamp) * 1000).toISOString()
             : new Date().toISOString(),
+          // A WhatsApp enquiry never carries a website/Instagram handle —
+          // there's no form field to read it from. The research stage will
+          // simply skip the sources it doesn't have.
+          website: null,
+          instagramHandle: null,
         });
       }
     }
@@ -81,6 +86,13 @@ export const FormLeadSchema = z.object({
   budget: z.string().trim().max(100).optional(),
   service: z.string().trim().max(200).optional(),
   timing: z.string().trim().max(100).optional(),
+  /**
+   * Both optional and both feed the research stage, not the LLM extraction —
+   * kept out of `context` below on purpose so Gemini never sees a URL or
+   * handle to "extract" a fact from.
+   */
+  website: z.string().trim().max(300).optional(),
+  instagramHandle: z.string().trim().max(100).optional(),
 });
 
 export type FormLeadInput = z.infer<typeof FormLeadSchema>;
@@ -109,5 +121,22 @@ export function normalizeForm(input: FormLeadInput): Lead {
     from: input.phone?.replace(/\D/g, "") || null,
     message: context ? `${context}\n\n${input.message}` : input.message,
     receivedAt: new Date().toISOString(),
+    website: normalizeWebsite(input.website),
+    instagramHandle: normalizeInstagramHandle(input.instagramHandle),
   };
+}
+
+/** Accepts a bare domain or a full URL; always stores a fetchable https URL. */
+function normalizeWebsite(input: string | undefined): string | null {
+  const trimmed = input?.trim();
+  if (!trimmed) return null;
+  return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+}
+
+/** Accepts "@handle", a full profile URL, or a bare handle; always stores the bare handle. */
+function normalizeInstagramHandle(input: string | undefined): string | null {
+  const trimmed = input?.trim();
+  if (!trimmed) return null;
+  const fromUrl = trimmed.match(/instagram\.com\/([^/?#]+)/i)?.[1];
+  return (fromUrl ?? trimmed).replace(/^@/, "") || null;
 }

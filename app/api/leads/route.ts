@@ -1,11 +1,33 @@
 import { FormLeadSchema, normalizeForm } from "@/lib/normalize";
 import { processLead } from "@/lib/pipeline";
+import {
+  listApprovedLeadIds,
+  listRejectedLeadIds,
+  readLatestOutcomes,
+  readLeadRows,
+  readResearchRows,
+  type Outcome,
+} from "@/lib/sheets";
 
 /**
- * Website form submissions. Same pipeline as WhatsApp, different front door:
- * the body is normalized into the one `Lead` shape and handed straight to
- * `processLead`.
+ * Website form submissions (POST). Same pipeline as WhatsApp, different
+ * front door: the body is normalized into the one `Lead` shape and handed
+ * straight to `processLead`.
+ *
+ * GET powers the dashboard: Qualified/Follow-up leads joined against the
+ * Approvals, Research, Rejections, and Outcomes tabs into one funnel
+ * `stage` per lead — Pending / Approved / Scheduling / Interested /
+ * Call Scheduled — computed here rather than stored as a mutable flag
+ * anywhere. Rejected leads are dropped entirely, not shown with a status.
  */
+
+export type Stage = "Pending" | "Approved" | "Scheduling" | "Interested" | "Call Scheduled";
+
+function stageFor(approved: boolean, bookingSent: boolean, outcome: Outcome | undefined): Stage {
+  if (!approved) return "Pending";
+  if (outcome) return outcome;
+  return bookingSent ? "Scheduling" : "Approved";
+}
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -24,6 +46,40 @@ const CORS = {
 
 export async function OPTIONS() {
   return new Response(null, { status: 204, headers: CORS });
+}
+
+/** Read-only, used by the dashboard. Not CORS-restricted to the dashboard's
+ * own origin for the same reason as the form: no cookies, no auth. */
+export async function GET() {
+  const [leads, approvedIds, rejectedIds, researchRows, outcomes] = await Promise.all([
+    readLeadRows(),
+    listApprovedLeadIds(),
+    listRejectedLeadIds(),
+    readResearchRows(),
+    readLatestOutcomes(),
+  ]);
+
+  const researchByLeadId = new Map(researchRows.map((r) => [r.leadId, r]));
+
+  const dashboardLeads = leads
+    .filter((lead) => lead.status === "Qualified" || lead.status === "Follow-up")
+    .filter((lead) => !rejectedIds.has(lead.id))
+    .map((lead) => {
+      const approved = approvedIds.has(lead.id);
+      const research = researchByLeadId.get(lead.id) ?? null;
+      const stage = stageFor(approved, research?.bookingMessageSent === "true", outcomes.get(lead.id));
+      return { ...lead, approved, research, stage };
+    })
+    .reverse(); // newest first — the Sheet appends oldest-first.
+
+  const stats = {
+    total: dashboardLeads.length,
+    pendingApproval: dashboardLeads.filter((l) => l.stage === "Pending").length,
+    approved: dashboardLeads.filter((l) => l.stage !== "Pending").length,
+    callsScheduled: dashboardLeads.filter((l) => l.stage === "Call Scheduled").length,
+  };
+
+  return Response.json({ ok: true, leads: dashboardLeads, stats }, { headers: CORS });
 }
 
 export async function POST(request: Request) {

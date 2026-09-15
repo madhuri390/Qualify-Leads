@@ -1,0 +1,202 @@
+[
+  {
+    "id": "hinglish-restaurant-chatbot",
+    "language": "hinglish",
+    "note": "Straightforward qualified lead. Tests lakh parsing and 'is mahine' as high urgency.",
+    "message": "bhai mujhe restaurant ke liye ek chatbot chahiye jo orders aur table booking handle kare. budget 3 lakh hai, is mahine hi start karna hai. main hi owner hu.",
+    "expected": {
+      "customer_name": null,
+      "company": null,
+      "email": null,
+      "service": "Chatbot for restaurant orders and table booking",
+      "budget_amount": 300000,
+      "budget_currency": "INR",
+      "timeline": "this month",
+      "urgency": "high",
+      "requirement_clarity": "clear",
+      "is_decision_maker": true
+    },
+    "expected_score": 85,
+    "expected_status": "Qualified"
+  },
+  {
+    "id": "hinglish-boutique-small-budget",
+    "language": "hinglish",
+    "note": "Below the ₹1L floor. 'hazaar' = thousand. Explicit non-urgency, so low rather than null.",
+    "message": "Hello ji, humara chhota sa boutique hai Kukatpally me. Ek simple website banwani hai, 4-5 pages. Budget 60 hazaar tak hai. Koi jaldi nahi, aaram se.",
+    "expected": {
+      "customer_name": null,
+      "company": null,
+      "email": null,
+      "service": "Simple 4-5 page website",
+      "budget_amount": 60000,
+      "budget_currency": "INR",
+      "timeline": null,
+      "urgency": "low",
+      "requirement_clarity": "clear",
+      "is_decision_maker": null
+    },
+    "expected_score": 25,
+    "expected_status": "Reject"
+  },
+  {
+    "id": "hinglish-not-decision-maker",
+    "language": "hinglish",
+    "note": "Sender names someone else as approver. Tests false rather than null on is_decision_maker.",
+    "message": "Hi, humein lead follow-up ke liye AI automation chahiye. Budget around 2 lakh rakha hai. Next month se start karna chahte hain. Main marketing head hoon, final approval humare director denge.",
+    "expected": {
+      "customer_name": null,
+      "company": null,
+      "email": null,
+      "service": "AI automation for lead follow-up",
+      "budget_amount": 200000,
+      "budget_currency": "INR",
+      "timeline": "next month",
+      "urgency": "medium",
+      "requirement_clarity": "clear",
+      "is_decision_maker": false
+    },
+    "expected_score": 45,
+    "expected_status": "Reject"
+  },
+  {
+    "id": "hinglish-price-enquiry-only",
+    "language": "hinglish",
+    "note": "One-line price ping. Everything must come back null — the hallucination check.",
+    "message": "website kitne ka banega bhaiya?",
+    "expected": {
+      "customer_name": null,
+      "company": null,
+      "email": null,
+      "service": "Website",
+      "budget_amount": null,
+      "budget_currency": null,
+      "timeline": null,
+      "urgency": null,
+      "requirement_clarity": "vague",
+      "is_decision_maker": null
+    },
+    "expected_score": 0,
+    "expected_status": "Reject"
+  },
+  {
+    "id": "hinglish-crore-hospital-chain",
+    "language": "hinglish",
+    "note": "Tests crore parsing (1.2 crore = 12000000) and 'immediately' as high urgency.",
+    "message": "Namaste, hum ek hospital chain hai. Patient management aur billing ka pura system banwana hai, 1.2 crore ka budget approve ho chuka hai. Immediately start karna hai. Main IT director hoon aur main hi sign karunga.",
+    "expected": {
+      "customer_name": null,
+      "company": null,
+      "email": null,
+      "service": "Patient management and billing system",
+      "budget_amount": 12000000,
+      "budget_currency": "INR",
+      "timeline": "immediately",
+      "urgency": "high",
+      "requirement_clarity": "clear",
+      "is_decision_maker": true
+    },
+    "expected_score": 90,
+    "expected_status": "Qualified"
+  },
+  {
+    "id": "tenglish-dental-booking-app",
+    "language": "tenglish",
+    "note": "Qualified lead in Telugu written in Latin script. 'lakshalu' = lakhs, 'ee nelalo' = this month.",
+    "message": "Anna, maaku oka dental clinic ki appointment booking app kaavali. Budget 5 lakshalu varaku undi, ee nelalo ne start cheyyali. Nenu ne clinic owner ni.",
+    "expected": {
+      "customer_name": null,
+      "company": null,
+      "email": null,
+      "service": "Appointment booking app for a dental clinic",
+      "budget_amount": 500000,
+      "budget_currency": "INR",
+      "timeline": "this month",
+      "urgency": "high",
+      "requirement_clarity": "clear",
+      "is_decision_maker": true
+    },
+    "expected_score": 85,
+    "expected_status": "Qualified"
+  },
+  {
+    "id": "tenglish-vague-enquiry",
+    "language": "tenglish",
+    "note": "Pure browsing. Nothing extractable — every field must be null.",
+    "message": "Hello, mee services gurinchi konchem cheppandi. Ippudu just enquiry chestunnanu.",
+    "expected": {
+      "customer_name": null,
+      "company": null,
+      "email": null,
+      "service": null,
+      "budget_amount": null,
+      "budget_currency": null,
+      "timeline": null,
+      "urgency": null,
+      "requirement_clarity": "unclear",
+      "is_decision_maker": null
+    },
+    "expected_score": 0,
+    "expected_status": "Reject"
+  },
+  {
+    "id": "tenglish-urgent-no-budget",
+    "language": "tenglish",
+    "note": "The follow-up demo case. Everything except budget, so the agent asks for exactly that.",
+    "message": "Maa restaurant ki oka website mariyu online ordering kavali. Chala urgent, ee week lo ne kavali. Nenu owner ni. Budget entha avutundo meeru cheppandi.",
+    "expected": {
+      "customer_name": null,
+      "company": null,
+      "email": null,
+      "service": "Website with online ordering for a restaurant",
+      "budget_amount": null,
+      "budget_currency": null,
+      "timeline": "this week",
+      "urgency": "high",
+      "requirement_clarity": "clear",
+      "is_decision_maker": true
+    },
+    "expected_score": 60,
+    "expected_status": "Follow-up"
+  },
+  {
+    "id": "tenglish-code-mixed-not-dm",
+    "language": "tenglish",
+    "note": "English and Telugu inside one sentence. Sender is a manager; the MD decides.",
+    "message": "Sir, we need a WhatsApp bot for our clinic reminders. Ee month lo start cheyyali, budget 1.5 lakhs untundi. Nenu manager ni, final call maa MD gaaru theeskuntaru.",
+    "expected": {
+      "customer_name": null,
+      "company": null,
+      "email": null,
+      "service": "WhatsApp bot for clinic reminders",
+      "budget_amount": 150000,
+      "budget_currency": "INR",
+      "timeline": "this month",
+      "urgency": "high",
+      "requirement_clarity": "clear",
+      "is_decision_maker": false
+    },
+    "expected_score": 65,
+    "expected_status": "Follow-up"
+  },
+  {
+    "id": "tenglish-usd-budget-founder",
+    "language": "tenglish",
+    "note": "Dollar budget in a Telugu enquiry. $2000 × 88 = ₹176000, which lands in the ₹1L–₹10L band.",
+    "message": "Namaskaram, maa startup ki oka landing page mariyu payment integration kavali. Budget 2000 dollars. Next quarter lo chudochu. Nenu founder ni.",
+    "expected": {
+      "customer_name": null,
+      "company": null,
+      "email": null,
+      "service": "Landing page with payment integration",
+      "budget_amount": 2000,
+      "budget_currency": "USD",
+      "timeline": "next quarter",
+      "urgency": "medium",
+      "requirement_clarity": "clear",
+      "is_decision_maker": true
+    },
+    "expected_score": 65,
+    "expected_status": "Follow-up"
+  }
+]
