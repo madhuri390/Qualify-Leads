@@ -1,7 +1,6 @@
-import { GoogleGenAI } from "@google/genai";
 import { z } from "zod";
-import { optionalEnv, requireEnv } from "./env";
-import { MODEL } from "./extract";
+import { optionalEnv } from "./env";
+import { completeJson } from "./openrouter";
 import type {
   GoogleReviewSignal,
   InstagramSignal,
@@ -190,12 +189,6 @@ interface SynthesisInput {
   websiteText: string | null;
 }
 
-let client: GoogleGenAI | null = null;
-function getClient(): GoogleGenAI {
-  client ??= new GoogleGenAI({ apiKey: requireEnv("GEMINI_API_KEY") });
-  return client;
-}
-
 async function synthesizeAnalysis(input: SynthesisInput): Promise<{
   services: string | null;
   painPoints: string | null;
@@ -218,32 +211,32 @@ async function synthesizeAnalysis(input: SynthesisInput): Promise<{
 
   const empty = { services: null, painPoints: null, summary: null, websiteSummary: null };
 
+  const { text, error } = await completeJson({
+    systemInstruction: ANALYSIS_SYSTEM_INSTRUCTION,
+    content: sections,
+    jsonSchema: ANALYSIS_JSON_SCHEMA,
+    schemaName: "business_analysis",
+  });
+
+  if (error) return { ...empty, error };
+  if (!text) return { ...empty, error: "Empty response" };
+
+  let json: unknown;
   try {
-    const response = await getClient().models.generateContent({
-      model: MODEL,
-      contents: sections,
-      config: {
-        systemInstruction: ANALYSIS_SYSTEM_INSTRUCTION,
-        responseMimeType: "application/json",
-        responseJsonSchema: ANALYSIS_JSON_SCHEMA,
-      },
-    });
-
-    const text = response.text;
-    if (!text) return { ...empty, error: "Empty response" };
-
-    const parsed = AnalysisSchema.safeParse(JSON.parse(text));
-    if (!parsed.success) return { ...empty, error: "Response failed validation" };
-
-    return {
-      services: parsed.data.services,
-      painPoints: parsed.data.pain_points,
-      summary: parsed.data.summary,
-      websiteSummary: parsed.data.website_summary,
-    };
-  } catch (error) {
-    return { ...empty, error: error instanceof Error ? error.message : "Unknown synthesis error" };
+    json = JSON.parse(text);
+  } catch {
+    return { ...empty, error: "Model response was not valid JSON" };
   }
+
+  const parsed = AnalysisSchema.safeParse(json);
+  if (!parsed.success) return { ...empty, error: "Response failed validation" };
+
+  return {
+    services: parsed.data.services,
+    painPoints: parsed.data.pain_points,
+    summary: parsed.data.summary,
+    websiteSummary: parsed.data.website_summary,
+  };
 }
 
 // ---- Orchestration ------------------------------------------------------------
